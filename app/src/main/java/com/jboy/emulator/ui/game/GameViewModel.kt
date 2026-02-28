@@ -1,14 +1,17 @@
 package com.jboy.emulator.ui.game
 
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jboy.emulator.core.AudioOutput
 import com.jboy.emulator.core.EmulatorCore
+import com.jboy.emulator.netplay.NetplaySessionBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -23,6 +26,8 @@ data class GameUiState(
     val isFastForward: Boolean = false,
     val fastForwardSpeed: Int = 1,
     val targetFps: Int = 60,
+    val netplayEnabled: Boolean = false,
+    val netplayStatus: String = "本地模式",
     val currentMenu: GameMenuType? = null,
     val lastSaveSlot: Int = -1,
     val lastLoadSlot: Int = -1,
@@ -65,6 +70,41 @@ class GameViewModel @Inject constructor(
     private var idleLoopRemovalSetting: String = "REMOVE_KNOWN"
     private var gbControllerRumbleSetting: Boolean = false
     private var activeCheatCodes: List<String> = emptyList()
+    private var sessionActiveStartMs: Long? = null
+    private var sessionAccumulatedMs: Long = 0L
+
+    init {
+        viewModelScope.launch {
+            NetplaySessionBus.state.collect { session ->
+                val activeSession = if (session.canStartLink) {
+                    EmulatorCore.NetplayLinkSession(
+                        protocol = session.protocol,
+                        serverAddress = session.serverAddress.ifBlank { session.resolvedWsUrl },
+                        roomId = session.roomId,
+                        nickname = session.nickname,
+                        connectedPeers = session.connectedPeers,
+                        readyPeers = session.readyPeers,
+                        canStartLink = session.canStartLink
+                    )
+                } else {
+                    null
+                }
+
+                emulatorCore.setNetplayLinkSession(activeSession)
+
+                val status = when {
+                    activeSession != null -> "联机已就绪: ${activeSession.roomId}"
+                    session.isConnected -> "联机已连接，等待准备"
+                    else -> "本地模式"
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    netplayEnabled = activeSession != null,
+                    netplayStatus = status
+                )
+            }
+        }
+    }
 
     fun loadGame(gamePath: String) {
         if (
@@ -78,6 +118,9 @@ class GameViewModel @Inject constructor(
             }
             if (audioPumpJob?.isActive != true) {
                 startAudioPumpLoop()
+            }
+            if (!_uiState.value.isPaused) {
+                resumeSessionTimer()
             }
             if (!_uiState.value.isPaused && audioEnabledSetting && !_uiState.value.isMuted) {
                 audioOutput.start()
@@ -137,6 +180,7 @@ class GameViewModel @Inject constructor(
                 }
                 startFrameLoop()
                 startAudioPumpLoop()
+                startPlaySessionTimer()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     errorMessage = "无法加载游戏: ${e.message}"
@@ -400,11 +444,13 @@ class GameViewModel @Inject constructor(
         if (paused) {
             emulatorCore.pause()
             audioOutput.pause()
+            pauseSessionTimer()
         } else {
             emulatorCore.resume()
             if (audioEnabledSetting && !_uiState.value.isMuted) {
                 audioOutput.resume()
             }
+            resumeSessionTimer()
         }
         _uiState.value = _uiState.value.copy(isPaused = paused)
     }
@@ -426,6 +472,7 @@ class GameViewModel @Inject constructor(
         val path = currentGamePath ?: return
         viewModelScope.launch {
             try {
+                pauseSessionTimer()
                 frameLoopJob?.cancelAndJoin()
                 frameLoopJob = null
                 audioPumpJob?.cancelAndJoin()
@@ -465,14 +512,20 @@ class GameViewModel @Inject constructor(
                 )
                 startFrameLoop()
                 startAudioPumpLoop()
+                resumeSessionTimer()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = "重置失败: ${e.message}")
             }
         }
     }
 
-    fun exitGame(onFinished: (() -> Unit)? = null) {
+    fun exitGame(
+        onFinished: (() -> Unit)? = null,
+        onSessionSummary: ((String, Long) -> Unit)? = null
+    ) {
         viewModelScope.launch {
+            val endedPath = currentGamePath
+            val sessionDurationMs = finishSessionTimer()
             frameLoopJob?.cancelAndJoin()
             frameLoopJob = null
             audioPumpJob?.cancelAndJoin()
@@ -483,8 +536,36 @@ class GameViewModel @Inject constructor(
             _videoFrame.value = null
             _uiState.value = GameUiState(isPlaying = false, isPaused = false, isMuted = false)
             currentGamePath = null
+            if (endedPath != null) {
+                onSessionSummary?.invoke(endedPath, sessionDurationMs)
+            }
             onFinished?.invoke()
         }
+    }
+
+    private fun startPlaySessionTimer() {
+        sessionAccumulatedMs = 0L
+        sessionActiveStartMs = SystemClock.elapsedRealtime()
+    }
+
+    private fun pauseSessionTimer() {
+        val startedAt = sessionActiveStartMs ?: return
+        val now = SystemClock.elapsedRealtime()
+        sessionAccumulatedMs += (now - startedAt).coerceAtLeast(0L)
+        sessionActiveStartMs = null
+    }
+
+    private fun resumeSessionTimer() {
+        if (sessionActiveStartMs == null) {
+            sessionActiveStartMs = SystemClock.elapsedRealtime()
+        }
+    }
+
+    private fun finishSessionTimer(): Long {
+        pauseSessionTimer()
+        val total = sessionAccumulatedMs.coerceAtLeast(0L)
+        sessionAccumulatedMs = 0L
+        return total
     }
 
     fun onButtonPress(button: GameButton) {

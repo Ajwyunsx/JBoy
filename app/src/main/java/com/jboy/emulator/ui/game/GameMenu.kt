@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jboy.emulator.ui.i18n.l10n
 
 @Composable
 fun GameMenu(
@@ -75,7 +76,7 @@ fun GameMenu(
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
-                text = "游戏菜单",
+                text = l10n("游戏菜单"),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -89,12 +90,12 @@ fun GameMenu(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "当前速度: ${currentFastForwardSpeed}x",
+                    text = l10n("当前速度: ${currentFastForwardSpeed}x"),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 Text(
-                    text = "目标帧率: ${currentTargetFps} FPS",
+                    text = l10n("目标帧率: ${currentTargetFps} FPS"),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -127,7 +128,7 @@ fun GameMenu(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(if (isPaused) "继续" else "暂停")
+                        Text(l10n(if (isPaused) "继续" else "暂停"))
                     }
                     OutlinedButton(
                         onClick = {
@@ -136,7 +137,7 @@ fun GameMenu(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(if (isMuted) "取消静音" else "静音")
+                        Text(l10n(if (isMuted) "取消静音" else "静音"))
                     }
                 }
 
@@ -151,7 +152,7 @@ fun GameMenu(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("快速存档")
+                        Text(l10n("快速存档"))
                     }
                     OutlinedButton(
                         onClick = {
@@ -160,7 +161,7 @@ fun GameMenu(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("快速读档")
+                        Text(l10n("快速读档"))
                     }
                 }
 
@@ -171,7 +172,7 @@ fun GameMenu(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("重置游戏")
+                    Text(l10n("重置游戏"))
                 }
 
                 OutlinedButton(
@@ -180,11 +181,11 @@ fun GameMenu(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("打开设置")
+                    Text(l10n("打开设置"))
                 }
 
                 Text(
-                    text = "按键布局",
+                    text = l10n("按键布局"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -196,7 +197,7 @@ fun GameMenu(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("进入布局编辑")
+                        Text(l10n("进入布局编辑"))
                     }
                 } else {
                     Row(
@@ -210,13 +211,13 @@ fun GameMenu(
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("保存布局")
+                            Text(l10n("保存布局"))
                         }
                         OutlinedButton(
                             onClick = onResetLayout,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("重置")
+                            Text(l10n("重置"))
                         }
                         TextButton(
                             onClick = {
@@ -225,13 +226,13 @@ fun GameMenu(
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("退出编辑")
+                            Text(l10n("退出编辑"))
                         }
                     }
                 }
 
                 Text(
-                    text = "存档槽位",
+                    text = l10n("存档槽位"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -247,8 +248,8 @@ fun GameMenu(
                         },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        label = { Text("输入槽位编号") },
-                        placeholder = { Text("例如 12") }
+                        label = { Text(l10n("输入槽位编号")) },
+                        placeholder = { Text(l10n("例如 12")) }
                     )
                     Button(
                         onClick = {
@@ -259,7 +260,7 @@ fun GameMenu(
                             }
                         }
                     ) {
-                        Text("存")
+                        Text(l10n("存"))
                     }
                     OutlinedButton(
                         onClick = {
@@ -270,7 +271,7 @@ fun GameMenu(
                             }
                         }
                     ) {
-                        Text("读")
+                        Text(l10n("读"))
                     }
                 }
 
@@ -282,10 +283,10 @@ fun GameMenu(
                         onClick = onAddSaveSlot,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("添加槽位")
+                        Text(l10n("添加槽位"))
                     }
                     Text(
-                        text = "总槽位: ${saveSlots.size}",
+                        text = l10n("总槽位: ${saveSlots.size}"),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier
                             .weight(1f)
@@ -324,7 +325,7 @@ fun GameMenu(
                 }
 
                 Text(
-                    text = "快进速度",
+                    text = l10n("快进速度"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -347,7 +348,7 @@ fun GameMenu(
                 }
 
                 Text(
-                    text = "GBA联机",
+                    text = l10n("GBA联机"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -363,12 +364,12 @@ fun GameMenu(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "联机功能测试中（待定）",
+                            text = l10n("局域网联机已启用"),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "服务端默认语言规划为 Rust，详细实施计划见根目录 plan.md",
+                            text = l10n("支持同一 Wi-Fi、热点、Tailscale/虚拟局域网，连接后可握手并准备开局"),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
                         )
@@ -378,13 +379,13 @@ fun GameMenu(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("打开联机测试页")
+                            Text(l10n("打开联机面板"))
                         }
                     }
                 }
 
                 Text(
-                    text = "金手指",
+                    text = l10n("金手指"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -400,7 +401,7 @@ fun GameMenu(
                         singleLine = false,
                         minLines = 1,
                         maxLines = 2,
-                        placeholder = { Text("示例: 82000000 03E7") }
+                        placeholder = { Text(l10n("示例: 82000000 03E7")) }
                     )
                     Button(
                         onClick = {
@@ -411,13 +412,13 @@ fun GameMenu(
                             }
                         }
                     ) {
-                        Text("添加")
+                        Text(l10n("添加"))
                     }
                 }
 
                 if (cheatCodes.isEmpty()) {
                     Text(
-                        text = "暂无金手指代码",
+                        text = l10n("暂无金手指代码"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -451,7 +452,7 @@ fun GameMenu(
                                     fontSize = 12.sp
                                 )
                                 TextButton(onClick = { onRemoveCheatCode(entry.id) }) {
-                                    Text("删除")
+                                    Text(l10n("删除"))
                                 }
                             }
                         }
@@ -459,7 +460,7 @@ fun GameMenu(
 
                     TextButton(onClick = onClearCheatCodes) {
                         Text(
-                            text = "清空金手指",
+                            text = l10n("清空金手指"),
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -471,7 +472,7 @@ fun GameMenu(
         confirmButton = {
             TextButton(onClick = onExitGame) {
                 Text(
-                    text = "退出游戏",
+                    text = l10n("退出游戏"),
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -481,7 +482,7 @@ fun GameMenu(
                 onResumeGame()
                 onDismiss()
             }) {
-                Text("继续游戏")
+                Text(l10n("继续游戏"))
             }
         }
     )
@@ -510,7 +511,7 @@ private fun SaveSlotPanel(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                text = "槽位 $slot",
+                text = l10n("槽位 $slot"),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -525,7 +526,7 @@ private fun SaveSlotPanel(
                         .height(36.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(text = "存", fontSize = 12.sp)
+                    Text(text = l10n("存"), fontSize = 12.sp)
                 }
                 OutlinedButton(
                     onClick = onLoad,
@@ -534,14 +535,14 @@ private fun SaveSlotPanel(
                         .height(36.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(text = "读", fontSize = 12.sp)
+                    Text(text = l10n("读"), fontSize = 12.sp)
                 }
             }
             TextButton(
                 onClick = onRemove,
                 modifier = Modifier.height(28.dp)
             ) {
-                Text(text = "移除", fontSize = 11.sp)
+                Text(text = l10n("移除"), fontSize = 11.sp)
             }
         }
     }

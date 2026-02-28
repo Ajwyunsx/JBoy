@@ -29,6 +29,15 @@ class GameListViewModel : ViewModel() {
     
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _favoritesOnly = MutableStateFlow(false)
+    val favoritesOnly: StateFlow<Boolean> = _favoritesOnly.asStateFlow()
+
+    private val _totalGames = MutableStateFlow(0)
+    val totalGames: StateFlow<Int> = _totalGames.asStateFlow()
+
+    private val _favoriteGames = MutableStateFlow(0)
+    val favoriteGames: StateFlow<Int> = _favoriteGames.asStateFlow()
     
     private val _recentGames = MutableStateFlow<List<GameItem>>(emptyList())
     val recentGames: StateFlow<List<GameItem>> = _recentGames.asStateFlow()
@@ -44,8 +53,9 @@ class GameListViewModel : ViewModel() {
                 // TODO: 从数据库或文件系统加载游戏列表
                 val gameList = loadGamesFromStorage()
                 _games.value = gameList
-                _filteredGames.value = gameList
-                updateRecentGames(gameList)
+                _totalGames.value = gameList.size
+                _favoriteGames.value = gameList.count { it.isFavorite }
+                applyFilters()
             } finally {
                 _isLoading.value = false
             }
@@ -54,18 +64,17 @@ class GameListViewModel : ViewModel() {
 
     fun searchGames(query: String) {
         _searchQuery.value = query
-        _filteredGames.value = if (query.isBlank()) {
-            _games.value
-        } else {
-            _games.value.filter { game ->
-                game.name.contains(query, ignoreCase = true)
-            }
-        }
+        applyFilters()
     }
 
     fun clearSearch() {
         _searchQuery.value = ""
-        _filteredGames.value = _games.value
+        applyFilters()
+    }
+
+    fun toggleFavoritesOnly() {
+        _favoritesOnly.value = !_favoritesOnly.value
+        applyFilters()
     }
 
     private fun updateRecentGames(games: List<GameItem>) {
@@ -115,17 +124,59 @@ class GameListViewModel : ViewModel() {
 
     fun removeGame(gameId: Long) {
         _games.value = _games.value.filter { it.id != gameId }
-        searchGames(_searchQuery.value)
+        applyFilters()
     }
 
     fun toggleFavorite(gameId: Long) {
-        _games.value = _games.value.map { game ->
+        val updated = _games.value.map { game ->
             if (game.id == gameId) {
                 game.copy(isFavorite = !game.isFavorite)
             } else {
                 game
             }
         }
-        searchGames(_searchQuery.value)
+
+        _games.value = updated
+        _favoriteGames.value = updated.count { it.isFavorite }
+        applyFilters()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val game = updated.firstOrNull { it.id == gameId } ?: return@launch
+            romRepository.setFavorite(game.path, game.isFavorite)
+        }
+    }
+
+    fun recordGameLaunched(path: String) {
+        val now = System.currentTimeMillis()
+        _games.value = _games.value.map { game ->
+            if (game.path == path) game.copy(lastPlayed = now) else game
+        }
+        applyFilters()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            romRepository.recordPlaySession(filePath = path, sessionDurationMs = 0L, playedAt = now)
+        }
+    }
+
+    private fun applyFilters() {
+        val query = _searchQuery.value
+        val favoritesOnly = _favoritesOnly.value
+        val base = _games.value
+
+        val filtered = base
+            .asSequence()
+            .filter { !favoritesOnly || it.isFavorite }
+            .filter { query.isBlank() || it.name.contains(query, ignoreCase = true) }
+            .sortedWith(
+                compareByDescending<GameItem> { it.isFavorite }
+                    .thenByDescending { it.lastPlayed }
+                    .thenBy { it.name.lowercase() }
+            )
+            .toList()
+
+        _filteredGames.value = filtered
+        _totalGames.value = base.size
+        _favoriteGames.value = base.count { it.isFavorite }
+        updateRecentGames(base)
     }
 }

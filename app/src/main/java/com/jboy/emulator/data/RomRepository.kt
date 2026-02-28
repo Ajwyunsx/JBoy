@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
@@ -46,8 +47,18 @@ class RomRepository(private val context: Context) {
     private val coverCacheDir: File by lazy {
         File(context.filesDir, "covers").apply { mkdirs() }
     }
+
+    private val metadataFile: File by lazy {
+        File(context.filesDir, "rom_metadata.json")
+    }
     
     private val supportedExtensions = listOf("gba", "zip")
+
+    private data class RomMetadata(
+        val isFavorite: Boolean = false,
+        val lastPlayed: Long = 0L,
+        val playTime: Long = 0L
+    )
     
     /**
      * 扫描文件夹中的所有ROM文件
@@ -314,30 +325,64 @@ class RomRepository(private val context: Context) {
      * 加载最近游戏列表
      */
     suspend fun loadRecentGames(limit: Int = 10): List<RomInfo> = withContext(Dispatchers.IO) {
-        // 从数据库加载，这里简化处理
-        emptyList()
+        getAllGames()
+            .filter { (it.lastPlayed ?: 0L) > 0L }
+            .sortedByDescending { it.lastPlayed ?: 0L }
+            .take(limit)
     }
     
     /**
      * 保存最近游戏
      */
     suspend fun saveRecentGame(romInfo: RomInfo) = withContext(Dispatchers.IO) {
-        // 保存到数据库，这里简化处理
+        recordPlaySession(filePath = romInfo.filePath, sessionDurationMs = 0L)
     }
     
     /**
      * 获取所有游戏
      */
     suspend fun getAllGames(): List<RomInfo> = withContext(Dispatchers.IO) {
+        val metadata = readMetadataMap()
         romCacheDir.listFiles()
             ?.filter { isRomFile(it.name) }
             ?.map { file ->
+                val key = metadataKey(file.absolutePath)
+                val entry = metadata[key] ?: RomMetadata()
+                val cover = File(coverCacheDir, "${file.name}.png").takeIf { it.exists() }?.absolutePath
                 RomInfo(
                     fileName = file.name,
                     filePath = file.absolutePath,
-                    displayName = file.nameWithoutExtension
+                    displayName = file.nameWithoutExtension,
+                    coverPath = cover,
+                    isFavorite = entry.isFavorite,
+                    lastPlayed = entry.lastPlayed.takeIf { it > 0L },
+                    playTime = entry.playTime
                 )
             } ?: emptyList()
+    }
+
+    suspend fun setFavorite(filePath: String, isFavorite: Boolean) = withContext(Dispatchers.IO) {
+        val metadata = readMetadataMap()
+        val key = metadataKey(filePath)
+        val current = metadata[key] ?: RomMetadata()
+        metadata[key] = current.copy(isFavorite = isFavorite)
+        writeMetadataMap(metadata)
+    }
+
+    suspend fun recordPlaySession(
+        filePath: String,
+        sessionDurationMs: Long,
+        playedAt: Long = System.currentTimeMillis()
+    ) = withContext(Dispatchers.IO) {
+        val metadata = readMetadataMap()
+        val key = metadataKey(filePath)
+        val current = metadata[key] ?: RomMetadata()
+        val safeDuration = sessionDurationMs.coerceAtLeast(0L)
+        metadata[key] = current.copy(
+            lastPlayed = playedAt,
+            playTime = (current.playTime + safeDuration).coerceAtLeast(0L)
+        )
+        writeMetadataMap(metadata)
     }
     
     /**
@@ -392,6 +437,57 @@ class RomRepository(private val context: Context) {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun metadataKey(path: String): String {
+        return path.lowercase()
+    }
+
+    private fun readMetadataMap(): MutableMap<String, RomMetadata> {
+        if (!metadataFile.exists()) {
+            return mutableMapOf()
+        }
+
+        return try {
+            val text = metadataFile.readText(Charsets.UTF_8)
+            if (text.isBlank()) {
+                mutableMapOf()
+            } else {
+                val root = JSONObject(text)
+                buildMap {
+                    val iterator = root.keys()
+                    while (iterator.hasNext()) {
+                        val key = iterator.next()
+                        val node = root.optJSONObject(key) ?: JSONObject()
+                        put(
+                            key,
+                            RomMetadata(
+                                isFavorite = node.optBoolean("isFavorite", false),
+                                lastPlayed = node.optLong("lastPlayed", 0L),
+                                playTime = node.optLong("playTime", 0L)
+                            )
+                        )
+                    }
+                }.toMutableMap()
+            }
+        } catch (_: Exception) {
+            mutableMapOf()
+        }
+    }
+
+    private fun writeMetadataMap(map: Map<String, RomMetadata>) {
+        val root = JSONObject()
+        map.forEach { (key, value) ->
+            root.put(
+                key,
+                JSONObject().apply {
+                    put("isFavorite", value.isFavorite)
+                    put("lastPlayed", value.lastPlayed)
+                    put("playTime", value.playTime)
+                }
+            )
+        }
+        metadataFile.writeText(root.toString(), Charsets.UTF_8)
     }
 }
 

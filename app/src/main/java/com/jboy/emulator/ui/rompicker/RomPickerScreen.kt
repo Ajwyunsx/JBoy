@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jboy.emulator.data.RomInfo
 import com.jboy.emulator.data.RomScanState
+import com.jboy.emulator.ui.i18n.l10n
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,27 +63,27 @@ fun RomPickerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("导入游戏") },
+                title = { Text(l10n("导入游戏")) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, l10n("返回"))
                     }
                 },
                 actions = {
                     val completeState = scanState as? RomScanState.Complete
                     if (completeState != null && completeState.roms.isNotEmpty()) {
                         TextButton(onClick = { viewModel.selectAll(completeState.roms) }) {
-                            Text("全选")
+                            Text(l10n("全选"))
                         }
                         TextButton(onClick = { viewModel.invertSelection(completeState.roms) }) {
-                            Text("反选")
+                            Text(l10n("反选"))
                         }
                     }
                     if (selectedRoms.isNotEmpty()) {
                         TextButton(
                             onClick = { viewModel.clearSelection() }
                         ) {
-                            Text("清除 (${selectedRoms.size})")
+                            Text(l10n("清除 (${selectedRoms.size})"))
                         }
                     }
                 }
@@ -105,16 +106,16 @@ fun RomPickerScreen(
                                 Toast.makeText(
                                     context,
                                     if (duplicateCount > 0) {
-                                        "导入成功 $successCount 个，跳过重复 $duplicateCount 个"
+                                        context.l10n("导入成功 $successCount 个，跳过重复 $duplicateCount 个")
                                     } else {
-                                        "成功导入 $successCount 个游戏"
+                                        context.l10n("成功导入 $successCount 个游戏")
                                     },
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 onBack()
                             },
                             icon = { Icon(Icons.Default.Check, null) },
-                            text = { Text("导入 ${selectedRoms.size} 个") }
+                            text = { Text(l10n("导入 ${selectedRoms.size} 个")) }
                         )
                     }
                 }
@@ -190,14 +191,14 @@ private fun IdleView(
         Spacer(modifier = Modifier.height(24.dp))
         
         Text(
-            text = "选择ROM文件",
+            text = l10n("选择ROM文件"),
             style = MaterialTheme.typography.headlineSmall
         )
         
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "支持 .gba 和 .zip 格式",
+            text = l10n("支持 .gba 和 .zip 格式"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -210,7 +211,7 @@ private fun IdleView(
         ) {
             Icon(Icons.Default.Folder, null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("浏览文件夹")
+            Text(l10n("浏览文件夹"))
         }
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -221,7 +222,7 @@ private fun IdleView(
         ) {
             Icon(Icons.Default.FileOpen, null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("选择文件")
+            Text(l10n("选择文件"))
         }
     }
 }
@@ -247,7 +248,7 @@ private fun ScanningView(
         Spacer(modifier = Modifier.height(24.dp))
         
         Text(
-            text = "正在扫描...",
+            text = l10n("正在扫描..."),
             style = MaterialTheme.typography.headlineSmall
         )
         
@@ -290,7 +291,7 @@ private fun RomListView(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "未找到ROM文件",
+                text = l10n("未找到ROM文件"),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -429,7 +430,7 @@ private fun ErrorView(
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "出错了",
+            text = l10n("出错了"),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.error
         )
@@ -437,7 +438,7 @@ private fun ErrorView(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = message,
+            text = l10n(message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -445,7 +446,7 @@ private fun ErrorView(
         Spacer(modifier = Modifier.height(24.dp))
         
         Button(onClick = onRetry) {
-            Text("重试")
+            Text(l10n("重试"))
         }
     }
 }

@@ -9,11 +9,15 @@ import androidx.core.os.LocaleListCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storage
@@ -23,12 +27,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jboy.emulator.input.HardwareKeyCaptureBus
 import com.jboy.emulator.ui.gamepad.DpadMode
+import com.jboy.emulator.ui.i18n.l10n
 import java.io.File
 import kotlinx.coroutines.flow.first
 
@@ -49,7 +56,7 @@ fun SettingsScreen(
         viewModel.updateHardwareKey(action, keyCode)
         Toast.makeText(
             context,
-            "${action.displayName} 已绑定: ${keyCodeLabel(keyCode)}",
+            context.l10n("${action.displayName} 已绑定: ${keyCodeLabel(keyCode)}"),
             Toast.LENGTH_SHORT
         ).show()
         learningAction = null
@@ -63,7 +70,7 @@ fun SettingsScreen(
             val biosFile = copyBiosToInternalStorage(context, it)
             biosFile?.let { file ->
                 viewModel.updateBiosPath(file.absolutePath)
-                Toast.makeText(context, "BIOS已加载", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.l10n("BIOS已加载"), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -71,10 +78,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
+                title = { Text(l10n("设置")) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, l10n("返回"))
                     }
                 }
             )
@@ -88,6 +95,73 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // 主题设置
+            SettingsSection(
+                title = "主题设置",
+                icon = Icons.Default.Palette
+            ) {
+                SwitchSetting(
+                    title = "启用自定义主题",
+                    checked = settings.themeCustomEnabled,
+                    onCheckedChange = { viewModel.updateThemeCustomEnabled(it) }
+                )
+
+                DropdownSetting(
+                    title = "主题预设",
+                    options = ThemePreset.entries.map { it.displayName },
+                    selectedIndex = ThemePreset.entries.indexOf(settings.themePreset).let { if (it >= 0) it else 0 },
+                    onSelect = { idx ->
+                        val preset = ThemePreset.entries[idx]
+                        viewModel.updateThemePreset(preset)
+                        viewModel.updateThemePrimaryHex(preset.primaryHex)
+                        viewModel.updateThemeSecondaryHex(preset.secondaryHex)
+                        viewModel.updateThemeTertiaryHex(preset.tertiaryHex)
+                        viewModel.updateThemeBackgroundHex(preset.backgroundHex)
+                        viewModel.updateThemeSurfaceHex(preset.surfaceHex)
+                    }
+                )
+
+                ThemeHexSetting(
+                    title = "主色 Primary",
+                    hexValue = settings.themePrimaryHex,
+                    swatches = listOf("#00696B", "#2E7D32", "#2456D1", "#B85600", "#A11D4A"),
+                    enabled = settings.themeCustomEnabled,
+                    onHexCommit = { viewModel.updateThemePrimaryHex(it) }
+                )
+
+                ThemeHexSetting(
+                    title = "辅色 Secondary",
+                    hexValue = settings.themeSecondaryHex,
+                    swatches = listOf("#4A6364", "#4E6A50", "#4A5D87", "#8B5D3B", "#5C5C7A"),
+                    enabled = settings.themeCustomEnabled,
+                    onHexCommit = { viewModel.updateThemeSecondaryHex(it) }
+                )
+
+                ThemeHexSetting(
+                    title = "强调色 Tertiary",
+                    hexValue = settings.themeTertiaryHex,
+                    swatches = listOf("#4B607B", "#6C7A35", "#6A4CA5", "#AA4C39", "#006A5C"),
+                    enabled = settings.themeCustomEnabled,
+                    onHexCommit = { viewModel.updateThemeTertiaryHex(it) }
+                )
+
+                ThemeHexSetting(
+                    title = "背景色 Background",
+                    hexValue = settings.themeBackgroundHex,
+                    swatches = listOf("#FAFDFC", "#F6FBF4", "#F4F7FF", "#FFF7F1", "#0F1113"),
+                    enabled = settings.themeCustomEnabled,
+                    onHexCommit = { viewModel.updateThemeBackgroundHex(it) }
+                )
+
+                ThemeHexSetting(
+                    title = "表面色 Surface",
+                    hexValue = settings.themeSurfaceHex,
+                    swatches = listOf("#FAFDFC", "#F8FCF6", "#F6F8FF", "#FFF8F3", "#171A1E"),
+                    enabled = settings.themeCustomEnabled,
+                    onHexCommit = { viewModel.updateThemeSurfaceHex(it) }
+                )
+            }
+
             // 视频设置
             SettingsSection(
                 title = "视频设置",
@@ -293,13 +367,13 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "实体手柄映射（蓝牙/OTG）",
+                    text = l10n("实体手柄映射（蓝牙/OTG）"),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 if (learningAction != null) {
                     Text(
-                        text = "学习中：请按下 ${learningAction?.displayName ?: "按键"}",
+                        text = l10n("学习中：请按下 ${learningAction?.displayName ?: "按键"}"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.tertiary
                     )
@@ -437,7 +511,7 @@ private fun SettingsSection(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = title,
+                text = l10n(title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -472,10 +546,10 @@ private fun DropdownSetting(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title)
+        Text(l10n(title))
         Box {
             TextButton(onClick = { expanded = true }) {
-                Text(options[selectedIndex])
+                Text(l10n(options[selectedIndex]))
             }
             DropdownMenu(
                 expanded = expanded,
@@ -483,7 +557,7 @@ private fun DropdownSetting(
             ) {
                 options.forEachIndexed { index, option ->
                     DropdownMenuItem(
-                        text = { Text(option) },
+                        text = { Text(l10n(option)) },
                         onClick = {
                             onSelect(index)
                             expanded = false
@@ -506,7 +580,7 @@ private fun SwitchSetting(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title)
+        Text(l10n(title))
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange
@@ -528,7 +602,7 @@ private fun SliderSetting(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(title)
+            Text(l10n(title))
             Text(valueFormatter(value))
         }
         Slider(
@@ -538,6 +612,111 @@ private fun SliderSetting(
             enabled = enabled
         )
     }
+}
+
+@Composable
+private fun ThemeHexSetting(
+    title: String,
+    hexValue: String,
+    swatches: List<String>,
+    enabled: Boolean,
+    onHexCommit: (String) -> Unit
+) {
+    var text by remember(hexValue) { mutableStateOf(hexValue) }
+    val normalized = normalizeHexInput(text)
+    val isValid = isHexColor(normalized)
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(l10n(title))
+            ColorPreview(hex = hexValue)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(9) },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                enabled = enabled,
+                label = { Text("HEX") },
+                placeholder = { Text("#RRGGBB") },
+                isError = enabled && text.isNotBlank() && !isValid
+            )
+            Button(
+                onClick = {
+                    if (isValid) {
+                        onHexCommit(normalized)
+                    }
+                },
+                enabled = enabled && isValid
+            ) {
+                Text(l10n("应用"))
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            swatches.forEach { hex ->
+                ColorPreview(
+                    hex = hex,
+                    shape = CircleShape,
+                    modifier = Modifier.clickable(enabled = enabled) {
+                        text = hex
+                        onHexCommit(hex)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorPreview(
+    hex: String,
+    shape: Shape = RoundedCornerShape(8.dp),
+    modifier: Modifier = Modifier
+) {
+    val color = parseHexColorOrDefault(hex)
+    Box(
+        modifier = modifier
+            .size(28.dp)
+            .background(color, shape)
+    )
+}
+
+private fun normalizeHexInput(input: String): String {
+    val cleaned = input.trim().uppercase().replace("[^#0-9A-F]".toRegex(), "")
+    return when {
+        cleaned.startsWith("#") -> cleaned
+        cleaned.isEmpty() -> ""
+        else -> "#$cleaned"
+    }
+}
+
+private fun isHexColor(input: String): Boolean {
+    return Regex("^#[0-9A-F]{6}$").matches(input)
+}
+
+private fun parseHexColorOrDefault(hex: String): Color {
+    val normalized = normalizeHexInput(hex)
+    if (!isHexColor(normalized)) {
+        return Color(0xFF666666)
+    }
+
+    val rgb = normalized.removePrefix("#").toLongOrNull(16) ?: return Color(0xFF666666)
+    val argb = (0xFF000000 or rgb).toInt()
+    return Color(argb)
 }
 
 @Composable
@@ -554,9 +733,9 @@ private fun HardwareMappingSetting(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title)
+            Text(text = l10n(title))
             Text(
-                text = keyCodeLabel(keyCode),
+                text = l10n(keyCodeLabel(keyCode)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -564,10 +743,10 @@ private fun HardwareMappingSetting(
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             OutlinedButton(onClick = onReset) {
-                Text("默认")
+                Text(l10n("默认"))
             }
             Button(onClick = onLearn) {
-                Text(if (isLearning) "等待中" else "学习")
+                Text(l10n(if (isLearning) "等待中" else "学习"))
             }
         }
     }
@@ -604,15 +783,15 @@ private fun ButtonSetting(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(title)
+            Text(l10n(title))
             Text(
-                text = subtitle,
+                text = l10n(subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         TextButton(onClick = onClick) {
-            Text("选择")
+            Text(l10n("选择"))
         }
     }
 }

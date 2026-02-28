@@ -41,7 +41,7 @@ sealed class Screen(val route: String) {
     object RomPicker : Screen("rom_picker")
 
     /**
-     * 联机测试页面
+     * 联机页面
      */
     object Netplay : Screen("netplay")
 

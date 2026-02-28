@@ -71,6 +71,11 @@ fun ActionButtonControl(
         InputHandler.Button.B -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.primary
     }
+    val textColor = when (inputButton) {
+        InputHandler.Button.A -> MaterialTheme.colorScheme.onPrimary
+        InputHandler.Button.B -> MaterialTheme.colorScheme.onTertiary
+        else -> MaterialTheme.colorScheme.onPrimary
+    }
 
     val touchModifier = if (inputEnabled) {
         Modifier.pointerInput(inputButton) {
@@ -106,7 +111,7 @@ fun ActionButtonControl(
     ) {
         Text(
             text = text,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = textColor,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold
         )

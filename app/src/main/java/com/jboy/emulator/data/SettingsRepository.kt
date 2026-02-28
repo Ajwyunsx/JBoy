@@ -15,6 +15,13 @@ data class SettingsData(
     val videoFilter: String = "NEAREST",
     val aspectRatio: String = "ORIGINAL",
     val showFps: Boolean = false,
+    val themeCustomEnabled: Boolean = false,
+    val themePreset: String = "JBOY_CLASSIC",
+    val themePrimaryHex: String = "#00696B",
+    val themeSecondaryHex: String = "#4A6364",
+    val themeTertiaryHex: String = "#4B607B",
+    val themeBackgroundHex: String = "#FAFDFC",
+    val themeSurfaceHex: String = "#FAFDFC",
     val audioEnabled: Boolean = true,
     val masterVolume: Float = 100f,
     val audioSampleRate: Int = 44100,
@@ -66,6 +73,13 @@ class SettingsDataStore(private val context: Context) {
         val VIDEO_FILTER = stringPreferencesKey("video_filter")
         val ASPECT_RATIO = stringPreferencesKey("aspect_ratio")
         val SHOW_FPS = booleanPreferencesKey("show_fps")
+        val THEME_CUSTOM_ENABLED = booleanPreferencesKey("theme_custom_enabled")
+        val THEME_PRESET = stringPreferencesKey("theme_preset")
+        val THEME_PRIMARY_HEX = stringPreferencesKey("theme_primary_hex")
+        val THEME_SECONDARY_HEX = stringPreferencesKey("theme_secondary_hex")
+        val THEME_TERTIARY_HEX = stringPreferencesKey("theme_tertiary_hex")
+        val THEME_BACKGROUND_HEX = stringPreferencesKey("theme_background_hex")
+        val THEME_SURFACE_HEX = stringPreferencesKey("theme_surface_hex")
         val AUDIO_ENABLED = booleanPreferencesKey("audio_enabled")
         val MASTER_VOLUME = floatPreferencesKey("master_volume")
         val AUDIO_SAMPLE_RATE = intPreferencesKey("audio_sample_rate")
@@ -117,6 +131,13 @@ class SettingsDataStore(private val context: Context) {
                 videoFilter = preferences[PreferencesKeys.VIDEO_FILTER] ?: "NEAREST",
                 aspectRatio = preferences[PreferencesKeys.ASPECT_RATIO] ?: "ORIGINAL",
                 showFps = preferences[PreferencesKeys.SHOW_FPS] ?: false,
+                themeCustomEnabled = preferences[PreferencesKeys.THEME_CUSTOM_ENABLED] ?: false,
+                themePreset = preferences[PreferencesKeys.THEME_PRESET] ?: "JBOY_CLASSIC",
+                themePrimaryHex = preferences[PreferencesKeys.THEME_PRIMARY_HEX] ?: "#00696B",
+                themeSecondaryHex = preferences[PreferencesKeys.THEME_SECONDARY_HEX] ?: "#4A6364",
+                themeTertiaryHex = preferences[PreferencesKeys.THEME_TERTIARY_HEX] ?: "#4B607B",
+                themeBackgroundHex = preferences[PreferencesKeys.THEME_BACKGROUND_HEX] ?: "#FAFDFC",
+                themeSurfaceHex = preferences[PreferencesKeys.THEME_SURFACE_HEX] ?: "#FAFDFC",
                 audioEnabled = preferences[PreferencesKeys.AUDIO_ENABLED] ?: true,
                 masterVolume = preferences[PreferencesKeys.MASTER_VOLUME] ?: 100f,
                 audioSampleRate = preferences[PreferencesKeys.AUDIO_SAMPLE_RATE] ?: 44100,
@@ -178,6 +199,48 @@ class SettingsDataStore(private val context: Context) {
     suspend fun updateShowFps(show: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.SHOW_FPS] = show
+        }
+    }
+
+    suspend fun updateThemeCustomEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_CUSTOM_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateThemePreset(preset: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_PRESET] = preset
+        }
+    }
+
+    suspend fun updateThemePrimaryHex(hex: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_PRIMARY_HEX] = hex
+        }
+    }
+
+    suspend fun updateThemeSecondaryHex(hex: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_SECONDARY_HEX] = hex
+        }
+    }
+
+    suspend fun updateThemeTertiaryHex(hex: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_TERTIARY_HEX] = hex
+        }
+    }
+
+    suspend fun updateThemeBackgroundHex(hex: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_BACKGROUND_HEX] = hex
+        }
+    }
+
+    suspend fun updateThemeSurfaceHex(hex: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_SURFACE_HEX] = hex
         }
     }
     
@@ -451,6 +514,13 @@ class SettingsRepository(private val dataStore: SettingsDataStore) {
     suspend fun updateVideoFilter(filter: String) = dataStore.updateVideoFilter(filter)
     suspend fun updateAspectRatio(ratio: String) = dataStore.updateAspectRatio(ratio)
     suspend fun updateShowFps(show: Boolean) = dataStore.updateShowFps(show)
+    suspend fun updateThemeCustomEnabled(enabled: Boolean) = dataStore.updateThemeCustomEnabled(enabled)
+    suspend fun updateThemePreset(preset: String) = dataStore.updateThemePreset(preset)
+    suspend fun updateThemePrimaryHex(hex: String) = dataStore.updateThemePrimaryHex(hex)
+    suspend fun updateThemeSecondaryHex(hex: String) = dataStore.updateThemeSecondaryHex(hex)
+    suspend fun updateThemeTertiaryHex(hex: String) = dataStore.updateThemeTertiaryHex(hex)
+    suspend fun updateThemeBackgroundHex(hex: String) = dataStore.updateThemeBackgroundHex(hex)
+    suspend fun updateThemeSurfaceHex(hex: String) = dataStore.updateThemeSurfaceHex(hex)
     suspend fun updateAudioEnabled(enabled: Boolean) = dataStore.updateAudioEnabled(enabled)
     suspend fun updateMasterVolume(volume: Float) = dataStore.updateMasterVolume(volume)
     suspend fun updateAudioSampleRate(sampleRate: Int) = dataStore.updateAudioSampleRate(sampleRate)

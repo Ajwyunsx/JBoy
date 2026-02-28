@@ -17,6 +17,13 @@ data class AppSettings(
     val videoFilter: VideoFilter = VideoFilter.NEAREST,
     val aspectRatio: AspectRatio = AspectRatio.ORIGINAL,
     val showFps: Boolean = false,
+    val themeCustomEnabled: Boolean = false,
+    val themePreset: ThemePreset = ThemePreset.JBOY_CLASSIC,
+    val themePrimaryHex: String = "#00696B",
+    val themeSecondaryHex: String = "#4A6364",
+    val themeTertiaryHex: String = "#4B607B",
+    val themeBackgroundHex: String = "#FAFDFC",
+    val themeSurfaceHex: String = "#FAFDFC",
     
     // 音频设置
     val audioEnabled: Boolean = true,
@@ -86,6 +93,14 @@ class SettingsViewModel(
                     videoFilter = VideoFilter.valueOf(data.videoFilter),
                     aspectRatio = AspectRatio.valueOf(data.aspectRatio),
                     showFps = data.showFps,
+                    themeCustomEnabled = data.themeCustomEnabled,
+                    themePreset = runCatching { ThemePreset.valueOf(data.themePreset) }
+                        .getOrDefault(ThemePreset.JBOY_CLASSIC),
+                    themePrimaryHex = sanitizeHexColor(data.themePrimaryHex, "#00696B"),
+                    themeSecondaryHex = sanitizeHexColor(data.themeSecondaryHex, "#4A6364"),
+                    themeTertiaryHex = sanitizeHexColor(data.themeTertiaryHex, "#4B607B"),
+                    themeBackgroundHex = sanitizeHexColor(data.themeBackgroundHex, "#FAFDFC"),
+                    themeSurfaceHex = sanitizeHexColor(data.themeSurfaceHex, "#FAFDFC"),
                     audioEnabled = data.audioEnabled,
                     masterVolume = data.masterVolume,
                     audioSampleRate = data.audioSampleRate,
@@ -151,6 +166,48 @@ class SettingsViewModel(
     fun updateShowFps(show: Boolean) {
         viewModelScope.launch {
             repository.updateShowFps(show)
+        }
+    }
+
+    fun updateThemeCustomEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.updateThemeCustomEnabled(enabled)
+        }
+    }
+
+    fun updateThemePreset(preset: ThemePreset) {
+        viewModelScope.launch {
+            repository.updateThemePreset(preset.name)
+        }
+    }
+
+    fun updateThemePrimaryHex(hex: String) {
+        viewModelScope.launch {
+            repository.updateThemePrimaryHex(sanitizeHexColor(hex, "#00696B"))
+        }
+    }
+
+    fun updateThemeSecondaryHex(hex: String) {
+        viewModelScope.launch {
+            repository.updateThemeSecondaryHex(sanitizeHexColor(hex, "#4A6364"))
+        }
+    }
+
+    fun updateThemeTertiaryHex(hex: String) {
+        viewModelScope.launch {
+            repository.updateThemeTertiaryHex(sanitizeHexColor(hex, "#4B607B"))
+        }
+    }
+
+    fun updateThemeBackgroundHex(hex: String) {
+        viewModelScope.launch {
+            repository.updateThemeBackgroundHex(sanitizeHexColor(hex, "#FAFDFC"))
+        }
+    }
+
+    fun updateThemeSurfaceHex(hex: String) {
+        viewModelScope.launch {
+            repository.updateThemeSurfaceHex(sanitizeHexColor(hex, "#FAFDFC"))
         }
     }
     
@@ -385,6 +442,60 @@ class SettingsViewModel(
             }
         }
     }
+}
+
+private fun sanitizeHexColor(input: String, fallback: String): String {
+    val raw = input.trim().uppercase()
+    val normalized = when {
+        raw.startsWith("#") -> raw
+        raw.isEmpty() -> fallback
+        else -> "#$raw"
+    }
+
+    val ok = Regex("^#[0-9A-F]{6}$").matches(normalized)
+    return if (ok) normalized else fallback
+}
+
+enum class ThemePreset(
+    val displayName: String,
+    val primaryHex: String,
+    val secondaryHex: String,
+    val tertiaryHex: String,
+    val backgroundHex: String,
+    val surfaceHex: String
+) {
+    JBOY_CLASSIC(
+        displayName = "JBOY 青色",
+        primaryHex = "#00696B",
+        secondaryHex = "#4A6364",
+        tertiaryHex = "#4B607B",
+        backgroundHex = "#FAFDFC",
+        surfaceHex = "#FAFDFC"
+    ),
+    SUNSET_ORANGE(
+        displayName = "落日橙",
+        primaryHex = "#B85600",
+        secondaryHex = "#8B5D3B",
+        tertiaryHex = "#6B5CAB",
+        backgroundHex = "#FFF7F1",
+        surfaceHex = "#FFF8F3"
+    ),
+    RETRO_GREEN(
+        displayName = "复古绿",
+        primaryHex = "#2E7D32",
+        secondaryHex = "#4E6A50",
+        tertiaryHex = "#6C7A35",
+        backgroundHex = "#F6FBF4",
+        surfaceHex = "#F8FCF6"
+    ),
+    COSMIC_BLUE(
+        displayName = "深海蓝",
+        primaryHex = "#2456D1",
+        secondaryHex = "#4A5D87",
+        tertiaryHex = "#6A4CA5",
+        backgroundHex = "#F4F7FF",
+        surfaceHex = "#F6F8FF"
+    )
 }
 
 enum class IdleLoopRemovalMode(val displayName: String, val coreValue: String) {

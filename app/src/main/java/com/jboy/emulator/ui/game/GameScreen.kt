@@ -51,10 +51,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.jboy.emulator.data.RomRepository
 import com.jboy.emulator.data.settingsDataStore
 import com.jboy.emulator.core.InputHandler as CoreInputHandler
 import com.jboy.emulator.core.InputKeys
 import com.jboy.emulator.input.InputHandler
+import com.jboy.emulator.ui.i18n.l10n
 import com.jboy.emulator.ui.gamepad.DpadMode
 import com.jboy.emulator.ui.gamepad.GamepadConfig
 import com.jboy.emulator.ui.gamepad.GamepadLayoutOffsets
@@ -208,6 +210,7 @@ fun GameScreen(
     val inputHandler = remember { InputHandler.getInstance() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val romRepository = remember { RomRepository(context.applicationContext) }
     var editableLayoutOffsets by remember { mutableStateOf(GamepadLayoutOffsets.DEFAULT) }
     var cheatCodes by remember(gamePath) { mutableStateOf<List<CheatCodeItem>>(emptyList()) }
     var cheatCodesLoaded by remember(gamePath) { mutableStateOf(false) }
@@ -522,7 +525,7 @@ fun GameScreen(
 
             if (uiState.errorMessage != null) {
                 Text(
-                    text = uiState.errorMessage ?: "",
+                    text = l10n(uiState.errorMessage ?: ""),
                     color = Color.White,
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -547,7 +550,7 @@ fun GameScreen(
             IconButton(onClick = { showMenu = true }) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "菜单",
+                    contentDescription = l10n("菜单"),
                     tint = Color.White
                 )
             }
@@ -555,7 +558,7 @@ fun GameScreen(
             IconButton(onClick = { viewModel.quickSave() }) {
                 Icon(
                     imageVector = Icons.Default.Save,
-                    contentDescription = "快速存档",
+                    contentDescription = l10n("快速存档"),
                     tint = Color.White
                 )
             }
@@ -569,10 +572,22 @@ fun GameScreen(
             }) {
                 Icon(
                     imageVector = if (gamepadPrefs.immersiveMode) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                    contentDescription = "沉浸模式",
+                    contentDescription = l10n("沉浸模式"),
                     tint = Color.White
                 )
             }
+        }
+
+        if (uiState.netplayEnabled || uiState.netplayStatus != "本地模式") {
+            Text(
+                text = l10n(uiState.netplayStatus),
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 10.dp, end = 12.dp)
+                    .background(Color(0x66000000), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
         }
 
         // 虚拟手柄覆盖层（右下角）
@@ -594,7 +609,7 @@ fun GameScreen(
 
         if (isLayoutEditMode) {
             Text(
-                text = "布局编辑中：拖动按键后在菜单点击“保存布局”",
+                text = l10n("布局编辑中：拖动按键后在菜单点击“保存布局”"),
                 color = Color.White,
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -617,9 +632,19 @@ fun GameScreen(
                 onToggleMute = { viewModel.toggleMute() },
                 onResetGame = { viewModel.resetGame() },
                 onExitGame = {
-                    viewModel.exitGame {
-                        onBackToList()
-                    }
+                    viewModel.exitGame(
+                        onFinished = {
+                            onBackToList()
+                        },
+                        onSessionSummary = { endedPath, durationMs ->
+                            scope.launch {
+                                romRepository.recordPlaySession(
+                                    filePath = endedPath,
+                                    sessionDurationMs = durationMs
+                                )
+                            }
+                        }
+                    )
                 },
                 onAddCheatCode = { code ->
                     val normalized = code.trim()

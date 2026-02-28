@@ -22,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -307,7 +306,7 @@ private fun BoxWithConstraintsScope.DraggableAnchor(
                     Modifier
                         .border(
                             width = 1.dp,
-                            color = Color.White.copy(alpha = 0.35f),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f),
                             shape = RoundedCornerShape(12.dp)
                         )
                         .background(

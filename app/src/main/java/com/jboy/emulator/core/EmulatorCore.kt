@@ -5,6 +5,16 @@ import android.util.Log
 
 class EmulatorCore private constructor() {
 
+    data class NetplayLinkSession(
+        val protocol: String,
+        val serverAddress: String,
+        val roomId: String,
+        val nickname: String,
+        val connectedPeers: Int,
+        val readyPeers: Int,
+        val canStartLink: Boolean
+    )
+
     companion object {
         private const val TAG = "EmulatorCore"
         
@@ -70,6 +80,7 @@ class EmulatorCore private constructor() {
     private var currentButtons = 0
     private var pendingAudioSampleRate = 44100
     private var pendingAudioBufferSize = 8192
+    private var activeNetplayLinkSession: NetplayLinkSession? = null
 
     fun init(): Boolean {
         if (isInitialized) {
@@ -93,6 +104,12 @@ class EmulatorCore private constructor() {
         
         isRomLoaded = nativeLoadRom(romPath)
         if (isRomLoaded) {
+            activeNetplayLinkSession?.let { session ->
+                Log.i(
+                    TAG,
+                    "Applying netplay session protocol=${session.protocol} room=${session.roomId} player=${session.nickname} peers=${session.connectedPeers} ready=${session.readyPeers}"
+                )
+            }
             Log.d(TAG, "ROM loaded: $romPath")
             return true
         }
@@ -291,4 +308,18 @@ class EmulatorCore private constructor() {
         }
         return nativeAddCheatCode(trimmed)
     }
+
+    fun setNetplayLinkSession(session: NetplayLinkSession?) {
+        activeNetplayLinkSession = session
+        if (session == null) {
+            Log.i(TAG, "Netplay link session cleared")
+            return
+        }
+        Log.i(
+            TAG,
+            "Netplay link session updated protocol=${session.protocol} room=${session.roomId} player=${session.nickname} peers=${session.connectedPeers} ready=${session.readyPeers} canStart=${session.canStartLink}"
+        )
+    }
+
+    fun getNetplayLinkSession(): NetplayLinkSession? = activeNetplayLinkSession
 }

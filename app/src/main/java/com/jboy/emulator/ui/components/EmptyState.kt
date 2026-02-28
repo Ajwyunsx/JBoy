@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.jboy.emulator.ui.i18n.l10n
 
 @Composable
 fun EmptyState(
@@ -40,7 +41,7 @@ fun EmptyState(
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = title,
+                text = l10n(title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -48,7 +49,7 @@ fun EmptyState(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = description,
+                text = l10n(description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 textAlign = TextAlign.Center

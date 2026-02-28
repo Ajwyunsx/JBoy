@@ -72,7 +72,7 @@ private fun WheelDPad(
             .size(wheelSize.dp)
             .alpha(config.buttonAlpha)
             .background(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
                 shape = CircleShape
             )
     val interactionModifier = if (inputEnabled) {
@@ -149,7 +149,7 @@ private fun WheelDPad(
             modifier = Modifier
                 .size((wheelSize * 0.70f).dp)
                 .background(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.24f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
                     shape = CircleShape
                 )
         )
@@ -189,7 +189,7 @@ private fun StickDPad(
             .size(joystickSize.dp)
             .alpha(config.buttonAlpha)
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                 shape = CircleShape
             )
     val interactionModifier = if (inputEnabled) {
@@ -276,7 +276,7 @@ private fun StickDPad(
                     y = (stickOffset.y / 1.75f).dp
                 )
                 .background(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f),
                     shape = CircleShape
                 )
         )

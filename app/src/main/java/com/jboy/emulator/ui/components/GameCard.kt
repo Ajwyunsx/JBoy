@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.jboy.emulator.ui.gamelist.GameItem
+import com.jboy.emulator.ui.i18n.l10n
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -102,9 +102,9 @@ fun GameCard(
                         } else {
                             Icons.Outlined.FavoriteBorder
                         },
-                        contentDescription = if (game.isFavorite) "取消收藏" else "收藏",
+                        contentDescription = l10n(if (game.isFavorite) "取消收藏" else "收藏"),
                         tint = if (game.isFavorite) {
-                            Color.Red
+                            MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         }
@@ -126,7 +126,7 @@ fun GameCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = formatLastPlayed(game.lastPlayed),
+                    text = l10n(formatLastPlayed(game.lastPlayed)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )

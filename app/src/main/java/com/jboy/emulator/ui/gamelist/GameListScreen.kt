@@ -13,8 +13,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jboy.emulator.ui.components.EmptyState
 import com.jboy.emulator.ui.components.GameCard
+import com.jboy.emulator.ui.i18n.l10n
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +58,9 @@ fun GameListScreen(
     val games by viewModel.filteredGames.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val favoritesOnly by viewModel.favoritesOnly.collectAsState()
+    val totalGames by viewModel.totalGames.collectAsState()
+    val favoriteGames by viewModel.favoriteGames.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val pullToRefreshState = rememberPullToRefreshState()
     
@@ -75,13 +81,13 @@ fun GameListScreen(
                 title = {
                     Column {
                         Text(
-                            text = "游戏库",
+                            text = l10n("游戏库"),
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        if (games.isNotEmpty()) {
+                        if (totalGames > 0) {
                             Text(
-                                text = "共 ${games.size} 款游戏",
+                                text = l10n("共 ${totalGames} 款游戏 · 收藏 ${favoriteGames}"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 maxLines = 1,
@@ -95,7 +101,7 @@ fun GameListScreen(
                     IconButton(onClick = { isSearchActive = !isSearchActive }) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "搜索",
+                            contentDescription = l10n("搜索"),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -103,7 +109,7 @@ fun GameListScreen(
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "设置",
+                            contentDescription = l10n("设置"),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -111,8 +117,23 @@ fun GameListScreen(
                     IconButton(onClick = { viewModel.loadGames() }) {
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
-                            contentDescription = "刷新",
+                            contentDescription = l10n("刷新"),
                             tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = { viewModel.toggleFavoritesOnly() }) {
+                        Icon(
+                            imageVector = if (favoritesOnly) {
+                                Icons.Filled.Favorite
+                            } else {
+                                Icons.Outlined.FavoriteBorder
+                            },
+                            contentDescription = l10n(if (favoritesOnly) "显示全部" else "仅看收藏"),
+                            tint = if (favoritesOnly) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                     }
                 },
@@ -130,7 +151,7 @@ fun GameListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "添加游戏"
+                    contentDescription = l10n("添加游戏")
                 )
             }
         }
@@ -159,11 +180,11 @@ fun GameListScreen(
             if (games.isEmpty() && !isLoading) {
                 EmptyState(
                     modifier = Modifier.fillMaxSize(),
-                    title = if (searchQuery.isNotEmpty()) "未找到游戏" else "暂无游戏",
+                    title = l10n(if (searchQuery.isNotEmpty()) "未找到游戏" else "暂无游戏"),
                     description = if (searchQuery.isNotEmpty()) {
-                        "尝试其他搜索词"
+                        l10n("尝试其他搜索词")
                     } else {
-                        "点击右下角按钮添加游戏"
+                        l10n("点击右下角按钮添加游戏")
                     }
                 )
             } else {
@@ -185,7 +206,10 @@ fun GameListScreen(
                     ) { game ->
                         GameCard(
                             game = game,
-                            onClick = { onGameClick(game) },
+                            onClick = {
+                                viewModel.recordGameLaunched(game.path)
+                                onGameClick(game)
+                            },
                             onFavoriteClick = { viewModel.toggleFavorite(game.id) }
                         )
                     }
@@ -224,7 +248,7 @@ private fun SearchBar(
         onSearch = { },
         active = false,
         onActiveChange = { },
-        placeholder = { Text("搜索游戏...") },
+        placeholder = { Text(l10n("搜索游戏...")) },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
@@ -237,7 +261,7 @@ private fun SearchBar(
                 IconButton(onClick = onClear) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "清除"
+                        contentDescription = l10n("清除")
                     )
                 }
             }
