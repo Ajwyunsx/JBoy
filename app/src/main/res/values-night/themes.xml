@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme -->
+    <style name="Theme.JBoyEmulator" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/primary_light</item>
+        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="colorOnPrimary">@color/primary_dark</item>
+        
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">#B0CCCD</item>
+        <item name="colorSecondaryVariant">#4A6364</item>
+        <item name="colorOnSecondary">#1B3435</item>
+        
+        <!-- Background and surface -->
+        <item name="android:colorBackground">#191C1C</item>
+        <item name="colorSurface">#191C1C</item>
+        <item name="colorOnSurface">#E0E3E2</item>
+        <item name="colorOnBackground">#E0E3E2</item>
+        
+        <!-- Error colors -->
+        <item name="colorError">#FFB4AB</item>
+        <item name="colorOnError">#690005</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">#191C1C</item>
+        <item name="android:navigationBarColor">#191C1C</item>
+        
+        <!-- Window attributes -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

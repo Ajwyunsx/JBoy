@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary brand color -->
+    <color name="primary">#00696B</color>
+    <color name="primary_variant">#004F50</color>
+    <color name="primary_dark">#004F50</color>
+    <color name="primary_light">#4CDADB</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#6FF6F9</color>
+    <color name="on_primary_container">#002020</color>
+    
+    <!-- Secondary brand color -->
+    <color name="secondary">#4A6364</color>
+    <color name="secondary_variant">#2D4142</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#CCE8E9</color>
+    <color name="on_secondary_container">#041F20</color>
+    
+    <!-- Tertiary brand color -->
+    <color name="tertiary">#4B607B</color>
+    <color name="on_tertiary">#FFFFFF</color>
+    <color name="tertiary_container">#D2E4FF</color>
+    <color name="on_tertiary_container">#041C2F</color>
+    
+    <!-- Background colors -->
+    <color name="background">#FAFDFC</color>
+    <color name="on_background">#191C1C</color>
+    <color name="surface">#FAFDFC</color>
+    <color name="on_surface">#191C1C</color>
+    
+    <!-- Surface variant -->
+    <color name="surface_variant">#DAE4E4</color>
+    <color name="on_surface_variant">#3F4949</color>
+    <color name="outline">#6F7979</color>
+    <color name="outline_variant">#BEC8C8</color>
+    
+    <!-- Error colors -->
+    <color name="error">#BA1A1A</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="error_container">#FFDAD6</color>
+    <color name="on_error_container">#410002</color>
+    
+    <!-- Inverse colors -->
+    <color name="inverse_surface">#2D3131</color>
+    <color name="inverse_on_surface">#EFF1F1</color>
+    <color name="inverse_primary">#4CDADB</color>
+    
+    <!-- Status bar -->
+    <color name="status_bar">#00696B</color>
+    <color name="status_bar_dark">#191C1C</color>
+    
+    <!-- Transparent -->
+    <color name="transparent">#00000000</color>
+    <color name="scrim">#80000000</color>
+    
+    <!-- Common utility colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray_50">#FAFAFA</color>
+    <color name="gray_100">#F5F5F5</color>
+    <color name="gray_200">#EEEEEE</color>
+    <color name="gray_300">#E0E0E0</color>
+    <color name="gray_400">#BDBDBD</color>
+    <color name="gray_500">#9E9E9E</color>
+    <color name="gray_600">#757575</color>
+    <color name="gray_700">#616161</color>
+    <color name="gray_800">#424242</color>
+    <color name="gray_900">#212121</color>
+</resources>
