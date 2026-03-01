@@ -62,14 +62,14 @@
 ## 安装
 
 ### 从 Release 下载
-1. 前往 [Releases](https://github.com/jboy-emulator/jboy-android/releases) 页面
+1. 前往 [Releases]([https://github.com/Ajwyunsx/JBoy/releases) 页面
 2. 下载最新的 APK 文件
 3. 安装到您的 Android 设备
 
 ### 从源码构建
 ```bash
 # 克隆仓库
-git clone https://github.com/jboy-emulator/jboy-android.git
+git clone https://github.com/Ajwyunsx/JBoy
 cd jboy-android
 
 # 构建 Debug APK
