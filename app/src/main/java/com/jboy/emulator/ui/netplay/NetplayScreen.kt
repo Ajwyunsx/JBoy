@@ -53,6 +53,7 @@ private val PREF_NETPLAY_TUTORIAL_SEEN = booleanPreferencesKey("netplay_tutorial
 @Composable
 fun NetplayScreen(
     onBack: () -> Unit,
+    boundGamePath: String? = null,
     viewModel: NetplayViewModel = viewModel()
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -72,6 +73,10 @@ fun NetplayScreen(
         if (!tutorialSeen) {
             showTutorial = true
         }
+    }
+
+    LaunchedEffect(boundGamePath) {
+        viewModel.bindGamePath(boundGamePath)
     }
 
     if (showTutorial) {
@@ -159,6 +164,19 @@ fun NetplayScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
+                    if (state.boundGameTitle.isNotBlank()) {
+                        Text(
+                            text = l10n("已绑定 GBA：${state.boundGameTitle}"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        TextButton(
+                            onClick = { viewModel.useBoundGameAsRoomId() },
+                            modifier = Modifier.padding(0.dp)
+                        ) {
+                            Text(l10n("使用绑定游戏名作为房间号"))
+                        }
+                    }
                     Text(
                         text = l10n("连接状态：${state.statusText}"),
                         style = MaterialTheme.typography.bodySmall

@@ -95,7 +95,7 @@ fun NavGraph(
                     navController.navigate(Screen.Settings.route)
                 },
                 onOpenNetplay = {
-                    navController.navigate(Screen.Netplay.route)
+                    navController.navigate(Screen.Netplay.createRoute(gamePath))
                 },
                 viewModel = viewModel
             )
@@ -112,11 +112,25 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Netplay.route) {
+        composable(
+            route = Screen.Netplay.route,
+            arguments = listOf(
+                navArgument("gamePath") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = ""
+                }
+            )
+        ) { backStackEntry ->
+            val boundGamePath = backStackEntry.arguments?.getString("gamePath")
+                ?.takeIf { it.isNotBlank() }
+                ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }
+
             NetplayScreen(
                 onBack = {
                     navController.popBackStack()
-                }
+                },
+                boundGamePath = boundGamePath
             )
         }
     }

@@ -1,11 +1,16 @@
 package com.jboy.emulator.ui.netplay
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.jboy.emulator.data.settingsDataStore
 import com.jboy.emulator.netplay.NetplaySessionBus
 import com.jboy.emulator.netplay.NetplaySessionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +32,7 @@ data class NetplayUiState(
     val serverAddress: String = "ws://10.0.2.2:8080",
     val roomId: String = "",
     val nickname: String = "Player",
+    val boundGameTitle: String = "",
     val statusText: String = "未连接",
     val lastMessage: String = "",
     val resolvedWsUrl: String = "",
@@ -51,12 +57,16 @@ data class LobbyRoomItem(
     val createdAt: String
 )
 
-class NetplayViewModel : ViewModel() {
+class NetplayViewModel(application: Application) : AndroidViewModel(application) {
     private val wsClient = OkHttpClient.Builder()
         .pingInterval(15, TimeUnit.SECONDS)
         .build()
 
+    private val appContext = application.applicationContext
+
     private var webSocket: WebSocket? = null
+    private var hasLoadedDraft = false
+    private var pendingBoundGamePath: String? = null
 
     private val _uiState = MutableStateFlow(NetplayUiState())
     val uiState: StateFlow<NetplayUiState> = _uiState.asStateFlow()
@@ -81,7 +91,44 @@ class NetplayViewModel : ViewModel() {
             }
         }
 
-        refreshLobbyRooms()
+        viewModelScope.launch(Dispatchers.IO) {
+            val prefs = appContext.settingsDataStore.data.first()
+            val savedServer = prefs[PREF_NETPLAY_SERVER_ADDRESS]?.trim().orEmpty()
+            val savedRoom = prefs[PREF_NETPLAY_ROOM_ID]?.trim().orEmpty()
+            val savedNickname = prefs[PREF_NETPLAY_NICKNAME]?.trim().orEmpty()
+
+            _uiState.update {
+                it.copy(
+                    serverAddress = savedServer.ifBlank { it.serverAddress },
+                    roomId = savedRoom,
+                    nickname = savedNickname.ifBlank { it.nickname }
+                )
+            }
+
+            hasLoadedDraft = true
+            applyBoundGameToDraftIfNeeded()
+            refreshLobbyRooms()
+        }
+    }
+
+    fun bindGamePath(gamePath: String?) {
+        pendingBoundGamePath = gamePath
+        applyBoundGameToDraftIfNeeded()
+    }
+
+    fun useBoundGameAsRoomId() {
+        val state = _uiState.value
+        val roomId = normalizeRoomId(state.boundGameTitle)
+        if (roomId.isBlank()) {
+            return
+        }
+        _uiState.update {
+            it.copy(
+                roomId = roomId,
+                errorText = null
+            )
+        }
+        persistDraft(roomId = roomId)
     }
 
     fun refreshLobbyRooms() {
@@ -160,6 +207,7 @@ class NetplayViewModel : ViewModel() {
                 errorText = null
             )
         }
+        persistDraft(roomId = roomId)
         connect()
     }
 
@@ -181,19 +229,26 @@ class NetplayViewModel : ViewModel() {
                 errorText = null
             )
         }
+        persistDraft(roomId = target)
         connect()
     }
 
     fun updateServerAddress(value: String) {
-        _uiState.update { it.copy(serverAddress = value.trim(), errorText = null) }
+        val normalized = value.trim()
+        _uiState.update { it.copy(serverAddress = normalized, errorText = null) }
+        persistDraft(serverAddress = normalized)
     }
 
     fun updateRoomId(value: String) {
-        _uiState.update { it.copy(roomId = value.trim(), errorText = null) }
+        val normalized = value.trim()
+        _uiState.update { it.copy(roomId = normalized, errorText = null) }
+        persistDraft(roomId = normalized)
     }
 
     fun updateNickname(value: String) {
-        _uiState.update { it.copy(nickname = value.trim(), errorText = null) }
+        val normalized = value.trim()
+        _uiState.update { it.copy(nickname = normalized, errorText = null) }
+        persistDraft(nickname = normalized)
     }
 
     fun connect() {
@@ -353,8 +408,9 @@ class NetplayViewModel : ViewModel() {
         val state = _uiState.value
         val room = state.roomId.ifBlank { "default" }
         val nickname = state.nickname.ifBlank { "Player" }
+        val game = state.boundGameTitle.ifBlank { room }
         val payload =
-            "{\"type\":\"hello\",\"protocol\":\"jboy-link-1\",\"room\":\"${jsonEscape(room)}\",\"nickname\":\"${jsonEscape(nickname)}\",\"client\":\"jboy-android\",\"link\":\"gba-link-cable\"}"
+            "{\"type\":\"hello\",\"protocol\":\"jboy-link-1\",\"room\":\"${jsonEscape(room)}\",\"nickname\":\"${jsonEscape(nickname)}\",\"client\":\"jboy-android\",\"link\":\"gba-link-cable\",\"game\":\"${jsonEscape(game)}\"}"
         ws.send(payload)
         _uiState.update {
             it.copy(
@@ -508,10 +564,67 @@ class NetplayViewModel : ViewModel() {
         return collapsedWhitespace.take(MAX_ROOM_ID_LENGTH)
     }
 
+    private fun applyBoundGameToDraftIfNeeded() {
+        val gamePath = pendingBoundGamePath ?: return
+        val gameTitle = deriveGameTitle(gamePath)
+        if (gameTitle.isBlank()) {
+            _uiState.update { it.copy(boundGameTitle = "") }
+            return
+        }
+
+        var autoFilledRoom: String? = null
+        _uiState.update { current ->
+            val nextRoom = if (hasLoadedDraft && current.roomId.isBlank()) {
+                normalizeRoomId(gameTitle)
+            } else {
+                current.roomId
+            }
+            if (nextRoom != current.roomId) {
+                autoFilledRoom = nextRoom
+            }
+            current.copy(
+                boundGameTitle = gameTitle,
+                roomId = nextRoom
+            )
+        }
+
+        autoFilledRoom?.let { persistDraft(roomId = it) }
+    }
+
+    private fun deriveGameTitle(gamePath: String): String {
+        val normalized = gamePath.trim()
+            .replace('\\', '/')
+            .substringAfterLast('/')
+            .substringBeforeLast('.', missingDelimiterValue = gamePath.trim())
+            .trim()
+        return normalized.take(MAX_GAME_TITLE_LENGTH)
+    }
+
+    private fun persistDraft(
+        serverAddress: String? = null,
+        roomId: String? = null,
+        nickname: String? = null
+    ) {
+        if (!hasLoadedDraft) {
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            appContext.settingsDataStore.edit { prefs ->
+                serverAddress?.let { prefs[PREF_NETPLAY_SERVER_ADDRESS] = it }
+                roomId?.let { prefs[PREF_NETPLAY_ROOM_ID] = it }
+                nickname?.let { prefs[PREF_NETPLAY_NICKNAME] = it }
+            }
+        }
+    }
+
     companion object {
         private val WS_FULL_PATH_REGEX = Regex(".*/ws/[^/]+/[^/]+$", RegexOption.IGNORE_CASE)
         private const val DEFAULT_NETPLAY_PORT = 8080
         private const val MAX_ROOM_ID_LENGTH = 40
+        private const val MAX_GAME_TITLE_LENGTH = 60
+        private val PREF_NETPLAY_SERVER_ADDRESS = stringPreferencesKey("netplay_server_address")
+        private val PREF_NETPLAY_ROOM_ID = stringPreferencesKey("netplay_room_id")
+        private val PREF_NETPLAY_NICKNAME = stringPreferencesKey("netplay_nickname")
     }
 
     private fun jsonEscape(value: String): String {

@@ -167,6 +167,7 @@ private val directZhToEn = mapOf(
     "刷新大厅" to "Refresh Lobby",
     "联机大厅状态" to "Lobby Status",
     "协议：jboy-link-1 · 支持局域网与 Tailscale 虚拟局域网" to "Protocol: jboy-link-1 · LAN + Tailscale supported",
+    "使用绑定游戏名作为房间号" to "Use bound game title as room ID",
     "联机握手已就绪：可开始 GBA Link" to "Handshake ready: you can start GBA Link",
     "等待双方准备完成" to "Waiting for both players to be ready",
     "创建房间" to "Create Room",
@@ -252,6 +253,7 @@ private val rules = listOf(
     ReplaceRule(Regex("^房间号: (.+)$")) { m -> "Room ID: ${m.groupValues[1]}" },
     ReplaceRule(Regex("^房主: (.+)$")) { m -> "Host: ${m.groupValues[1]}" },
     ReplaceRule(Regex("^解析地址：(.+)$")) { m -> "Resolved URL: ${m.groupValues[1]}" },
+    ReplaceRule(Regex("^已绑定 GBA：(.+)$")) { m -> "Bound GBA: ${m.groupValues[1]}" },
     ReplaceRule(Regex("^错误：(.*)$")) { m -> "Error: ${toEnglishText(m.groupValues[1].trim())}" },
     ReplaceRule(Regex("^最后消息：(.*)$")) { m -> "Last message: ${toEnglishText(m.groupValues[1].trim())}" },
     ReplaceRule(Regex("^学习中：请按下 (.+)$")) { m -> "Learning: press ${toEnglishText(m.groupValues[1])}" },
@@ -270,6 +272,9 @@ private val rules = listOf(
     },
     ReplaceRule(Regex("^大厅刷新失败: (.+)$")) { m ->
         "Lobby refresh failed: ${toEnglishText(m.groupValues[1])}"
+    },
+    ReplaceRule(Regex("^启动连接失败: (.+)$")) { m ->
+        "Failed to start connection: ${toEnglishText(m.groupValues[1])}"
     },
     ReplaceRule(Regex("^正在进入房间 (.+)$")) { m -> "Joining room ${m.groupValues[1]}" },
     ReplaceRule(Regex("^关闭中 \\((\\d+)\\)$")) { m -> "Closing (${m.groupValues[1]})" },

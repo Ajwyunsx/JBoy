@@ -43,7 +43,17 @@ sealed class Screen(val route: String) {
     /**
      * 联机页面
      */
-    object Netplay : Screen("netplay")
+    object Netplay : Screen("netplay?gamePath={gamePath}") {
+        const val baseRoute: String = "netplay"
+
+        fun createRoute(gamePath: String? = null): String {
+            if (gamePath.isNullOrBlank()) {
+                return baseRoute
+            }
+            val encoded = URLEncoder.encode(gamePath, StandardCharsets.UTF_8.toString())
+            return "$baseRoute?gamePath=$encoded"
+        }
+    }
 
     companion object {
         /**
@@ -54,6 +64,7 @@ sealed class Screen(val route: String) {
             Game.route,
             Settings.route,
             RomPicker.route,
+            Netplay.baseRoute,
             Netplay.route
         )
 
