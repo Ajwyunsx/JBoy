@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
 data class NetplayUiState(
-    val serverAddress: String = "ws://127.0.0.1:8080",
+    val serverAddress: String = "ws://10.0.2.2:8080",
     val roomId: String = "",
     val nickname: String = "Player",
     val statusText: String = "未连接",
@@ -105,12 +105,11 @@ class NetplayViewModel : ViewModel() {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url("${baseUrl.trimEnd('/')}/rooms")
-                .get()
-                .build()
-
             runCatching {
+                val request = Request.Builder()
+                    .url("${baseUrl.trimEnd('/')}/rooms")
+                    .get()
+                    .build()
                 wsClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
                         error("HTTP ${response.code}")
@@ -231,83 +230,103 @@ class NetplayViewModel : ViewModel() {
             )
         }
 
-        val request = Request.Builder()
-            .url(url)
-            .build()
+        runCatching {
+            val request = Request.Builder()
+                .url(url)
+                .build()
 
-        webSocket = wsClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                _uiState.update {
-                    it.copy(
-                        isConnecting = false,
-                        isConnected = true,
-                        statusText = "已连接，准备握手",
-                        errorText = null
-                    )
+            wsClient.newWebSocket(request, object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    _uiState.update {
+                        it.copy(
+                            isConnecting = false,
+                            isConnected = true,
+                            statusText = "已连接，准备握手",
+                            errorText = null
+                        )
+                    }
+                    sendHandshake()
+                    refreshLobbyRooms()
                 }
-                sendHandshake()
-                refreshLobbyRooms()
-            }
 
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                handleServerMessage(text)
-            }
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    handleServerMessage(text)
+                }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                _uiState.update {
-                    it.copy(
-                        statusText = "关闭中 ($code)",
-                        isConnecting = false,
-                        isConnected = false,
-                        resolvedWsUrl = ""
-                    )
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    _uiState.update {
+                        it.copy(
+                            statusText = "关闭中 ($code)",
+                            isConnecting = false,
+                            isConnected = false,
+                            resolvedWsUrl = ""
+                        )
+                    }
+                    webSocket.close(code, reason)
                 }
-                webSocket.close(code, reason)
-            }
 
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                this@NetplayViewModel.webSocket = null
-                _uiState.update {
-                    it.copy(
-                        statusText = "已断开 ($code)",
-                        isConnecting = false,
-                        isConnected = false,
-                        resolvedWsUrl = "",
-                        protocolState = "未握手",
-                        connectedPeers = 0,
-                        readyPeers = 0,
-                        isSelfReady = false,
-                        canStartLink = false
-                    )
+                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    this@NetplayViewModel.webSocket = null
+                    _uiState.update {
+                        it.copy(
+                            statusText = "已断开 ($code)",
+                            isConnecting = false,
+                            isConnected = false,
+                            resolvedWsUrl = "",
+                            protocolState = "未握手",
+                            connectedPeers = 0,
+                            readyPeers = 0,
+                            isSelfReady = false,
+                            canStartLink = false
+                        )
+                    }
+                    refreshLobbyRooms()
                 }
-                refreshLobbyRooms()
-            }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                this@NetplayViewModel.webSocket = null
-                val httpCode = response?.code
-                val detail = when {
-                    httpCode == 404 -> "(HTTP 404) 检查 ws 路径是否为 /ws/{room}/{player}"
-                    httpCode != null -> "(HTTP $httpCode)"
-                    else -> ""
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    this@NetplayViewModel.webSocket = null
+                    val httpCode = response?.code
+                    val detail = when {
+                        httpCode == 404 -> "(HTTP 404) 检查 ws 路径是否为 /ws/{room}/{player}"
+                        httpCode != null -> "(HTTP $httpCode)"
+                        else -> ""
+                    }
+                    _uiState.update {
+                        it.copy(
+                            statusText = "连接失败",
+                            isConnecting = false,
+                            isConnected = false,
+                            resolvedWsUrl = "",
+                            protocolState = "未握手",
+                            connectedPeers = 0,
+                            readyPeers = 0,
+                            isSelfReady = false,
+                            canStartLink = false,
+                            errorText = "${t.message ?: "未知错误"} $detail".trim()
+                        )
+                    }
+                    refreshLobbyRooms()
                 }
-                _uiState.update {
-                    it.copy(
-                        statusText = "连接失败",
-                        isConnecting = false,
-                        isConnected = false,
-                        resolvedWsUrl = "",
-                        protocolState = "未握手",
-                        connectedPeers = 0,
-                        readyPeers = 0,
-                        isSelfReady = false,
-                        canStartLink = false,
-                        errorText = "${t.message ?: "未知错误"} $detail".trim()
-                    )
-                }
-                refreshLobbyRooms()
+            })
+        }.onSuccess { socket ->
+            webSocket = socket
+        }.onFailure { throwable ->
+            webSocket = null
+            _uiState.update {
+                it.copy(
+                    statusText = "连接失败",
+                    isConnecting = false,
+                    isConnected = false,
+                    resolvedWsUrl = "",
+                    protocolState = "未握手",
+                    connectedPeers = 0,
+                    readyPeers = 0,
+                    isSelfReady = false,
+                    canStartLink = false,
+                    errorText = "启动连接失败: ${throwable.message ?: "未知错误"}"
+                )
             }
-        })
+        }
     }
 
     fun disconnect() {
